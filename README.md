@@ -1,33 +1,17 @@
-### milkart
 
-reservations
+A Service Unit Reservation System for ERPNext Healthcare that works exactly like Practitioner Appointments but for Service Units.
 
-### Installation
+## Features
 
-You can install this app using the [bench](https://github.com/frappe/bench) CLI:
+- ✅ Service Unit Scheduling (like Practitioner Schedule)
+- ✅ Time Slot Management
+- ✅ Availability Checking
+- ✅ Conflict Prevention
+- ✅ Integration with Patient Appointment
+- ✅ Custom Service Unit Reservation Doctype
 
-```bash
-cd $PATH_TO_YOUR_BENCH
-bench get-app $URL_OF_THIS_REPO --branch develop
-bench install-app milkart_reservations
-```
-
-### Contributing
-
-This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
+## Installation
 
 ```bash
-cd apps/milkart_reservations
-pre-commit install
-```
-
-Pre-commit is configured to use the following tools for checking and formatting your code:
-
-- ruff
-- eslint
-- prettier
-- pyupgrade
-
-### License
-
-mit
+bench get-app milkart_reservations [repository_url]
+bench --site [sitename] install-app milkart_reservations
