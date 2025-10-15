@@ -1,0 +1,29 @@
+
+
+/* Custom styling for Service Unit Schedule child table */
+.table-service-unit-schedule-item .grid-heading-row {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table-service-unit-schedule-item .grid-row {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-service-unit-schedule-item .grid-row:hover {
+    background-color: #f8f9fa;
+}
+
+/* Highlight the schedule section */
+[data-fieldname="service_unit_schedule"] .section-head {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+}
+
+[data-fieldname="service_unit_schedule"] .section-head h6 {
+    color: #1976d2;
+    margin: 0;
+    font-weight: 600;
+}
