@@ -1,4 +1,3 @@
-
 from . import __version__ as app_version
 
 app_name = "milkart_reservations"
@@ -13,18 +12,40 @@ app_include_css = "/assets/milkart_reservations/css/healthcare_service_unit.css"
 app_include_js = "/assets/milkart_reservations/js/healthcare_service_unit.js"
 
 # include js in doctype views
-doctype_js = {
+doctype_js = {   
     "Healthcare Service Unit": "public/js/healthcare_service_unit.js",
     "Service Unit Reservation": "public/js/service_unit_reservation.js",
     "Patient Appointment": "public/js/patient_appointment.js"
 }
 
-# Document Events (commented out until we create the actual modules)
-# doc_events = {
-#     "Healthcare Service Unit": {
-#         "on_update": "milkart_reservations.milkart_reservations.events.healthcare_service_unit.on_update"
-#     }
-# }
+# Document Events - Use doc_events for reliable validation
+doc_events = {
+    "Patient Appointment": {
+        "before_save": "milkart_reservations.api.service_unit_appointment.validate_appointment_before_save"
+    }
+}
 
-# Installation (commented out until we create the actual modules)
-# after_install = "milkart_reservations.install.after_install"
+# Installation
+after_install = "milkart_reservations.install.after_install"
+
+# Fixtures for custom fields
+fixtures = [
+    {
+        "dt": "Custom Field", 
+        "filters": [
+            ["module", "=", "Milkart Reservations"]
+        ]
+    }
+]
+
+# Scheduled Tasks
+scheduler_events = {
+    "cron": {
+        "0 0 * * *": [
+            "milkart_reservations.api.service_unit_appointment.cleanup_old_reservations"
+        ]
+    }
+}
+
+# Testing
+# ----
