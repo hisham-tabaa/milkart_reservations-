@@ -1,15 +1,27 @@
+// milkart_reservations/public/js/patient_appointment.js
+
 frappe.ui.form.on('Patient Appointment', {
     refresh: function(frm) {
         frm.trigger('setup_service_unit_availability');
         frm.trigger('add_debug_button');
+        frm.trigger('toggle_book_button'); // 👈 NEW: control Book button visibility
     },
 
     service_unit: function(frm) {
         frm.trigger('setup_service_unit_availability');
     },
 
+    appointment_type: function(frm) {
+        frm.trigger('toggle_book_button'); // 👈 NEW
+    },
+
+    procedure_template: function(frm) {
+        frm.trigger('toggle_book_button'); // 👈 NEW
+    },
+
     appointment_date: function(frm) {
         frm.trigger('setup_service_unit_availability');
+        frm.trigger('toggle_book_button'); // 👈 NEW
     },
 
     appointment_time: function(frm) {
@@ -18,6 +30,25 @@ frappe.ui.form.on('Patient Appointment', {
             frm.trigger('validate_selected_time_slot');
         }
         frm.trigger('setup_service_unit_availability');
+        frm.trigger('toggle_book_button'); // 👈 NEW
+    },
+
+    // 👇 NEW: Toggle visibility of the primary "Book" button
+    toggle_book_button: function(frm) {
+        const book_btn = $('button.primary-action[data-label="Book"]');
+        if (!book_btn.length) return;
+
+        const ready = 
+            frm.doc.appointment_type &&
+            frm.doc.appointment_date &&
+            frm.doc.procedure_template &&
+            frm.doc.appointment_time;
+
+        if (ready) {
+            book_btn.show();
+        } else {
+            book_btn.hide();
+        }
     },
 
     setup_service_unit_availability: function(frm) {
@@ -103,46 +134,6 @@ frappe.ui.form.on('Patient Appointment', {
         });
     },
 
-    add_debug_button: function(frm) {
-        // Debug button for selected time slot only
-        if (frm.doc.service_unit && frm.doc.appointment_date && frm.doc.appointment_time) {
-            frm.add_custom_button(__('🔍 Debug This Slot'), function() {
-                frappe.call({
-                    method: 'milkart_reservations.api.service_unit_appointment.get_service_unit_appointment_count_strict',
-                    args: {
-                        service_unit: frm.doc.service_unit,
-                        date: frm.doc.appointment_date,
-                        time: frm.doc.appointment_time,
-                        duration: frm.doc.duration || 30,
-                        appointment_id: frm.doc.name
-                    },
-                    callback: function(r) {
-                        let debug_info = __('<b>Debug Information for Selected Slot:</b><br>');
-                        debug_info += __('Time: {0}<br>').format(frm.doc.appointment_time);
-                        debug_info += __('Duration: {0} minutes<br>').format(frm.doc.duration || 30);
-                        debug_info += __('<b>Overlapping Appointments: {0}</b><br>').format(r.message.count);
-                        
-                        if (r.message.appointments && r.message.appointments.length > 0) {
-                            debug_info += __('<br><b>Conflicting Appointments:</b><br>');
-                            r.message.appointments.forEach(app => {
-                                debug_info += __('- {0} at {1} (Status: {2})<br>').format(
-                                    app.patient_name, app.appointment_time, app.status
-                                );
-                            });
-                        } else {
-                            debug_info += __('<br>✅ No conflicts found - slot should be available');
-                        }
-                        
-                        frappe.msgprint({
-                            title: __('🔍 Slot Debug Information'),
-                            message: debug_info,
-                            indicator: r.message.count > 0 ? 'red' : 'green'
-                        });
-                    }
-                });
-            }).addClass('btn-warning');
-        }
-    },
 
     before_save: function(frm) {
         // ⭐ FINAL VALIDATION - This should match server-side validation
