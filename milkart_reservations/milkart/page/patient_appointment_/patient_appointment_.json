@@ -1,0 +1,21 @@
+{
+ "content": "<div class=\"patient-appointment-calendar-container\"></div>",
+ "creation": "2025-10-22 22:34:30.275729",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "fa fa-calendar",
+ "idx": 0,
+ "modified": "2025-10-22 22:34:30.275729",
+ "modified_by": "Administrator",
+ "module": "milkart",
+ "name": "patient-appointment-",
+ "owner": "Administrator",
+ "page_name": "patient-appointment-",
+ "restrict_to_domain": "",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Patient Appointment Calendar"
+}

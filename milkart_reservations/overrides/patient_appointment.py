@@ -47,3 +47,13 @@ def validate_service_unit_availability(doc, method=None):
             frappe.throw(_("Service Unit Not Available: {0}").format(
                 result.get('message', 'Time slot is not available')
             ))
+            
+@frappe.whitelist()
+def reschedule_via_calendar(docname, new_date, new_time):
+    doc = frappe.get_doc("Patient Appointment", docname)
+    doc.appointment_date = new_date
+    doc.appointment_time = new_time
+    doc.set_appointment_datetime()
+    doc.validate()  # runs overlap checks
+    doc.save()
+    return {"success": True}            

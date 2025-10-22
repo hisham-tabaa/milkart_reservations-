@@ -11,6 +11,10 @@ app_license = "MIT"
 app_include_css = "/assets/milkart_reservations/css/healthcare_service_unit.css"
 app_include_js = "/assets/milkart_reservations/js/healthcare_service_unit.js"
 
+page_js = {
+	"patient-appointment-calendar": "public/js/patient_appointment_calendar_controller.js"
+}
+
 # include js in doctype views
 doctype_js = {   
     "Healthcare Service Unit": "public/js/healthcare_service_unit.js",
@@ -23,6 +27,11 @@ doc_events = {
     "Patient Appointment": {
         "before_save": "milkart_reservations.api.service_unit_appointment.validate_appointment_before_save"
     }
+}
+
+
+override_doctype_class = {
+    "Patient Appointment": "milkart_reservations.overrides.patient_appointment.InsightCorePatientAppointment"
 }
 
 # Installation
