@@ -1,7 +1,7 @@
 import frappe
 from .service_unit_appointment import check_service_unit_availability, get_service_unit_availability
 
-# For backward compatibility
+# For backward compatibility111
 @frappe.whitelist()
 def check_availability(service_unit, date):
     """Main availability check function"""
