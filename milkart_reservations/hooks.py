@@ -9,7 +9,7 @@ app_publisher = "Healthcare"
 app_description = "Service Unit Reservation System for Healthcare in ERPNext"
 app_email = "contact@example.com"
 app_license = "MIT"
-app_version = __version__
+app_version = '1.0.0'
 
 
 # ============================================
