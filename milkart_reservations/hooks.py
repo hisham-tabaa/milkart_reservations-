@@ -1,3 +1,5 @@
+# /home/cyberv/temp-bench/apps/milkart_reservations/milkart_reservations/hooks.py
+
 from . import __version__ as app_version
 
 # ============================================

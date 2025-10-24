@@ -1,5 +1,5 @@
-// /home/cyberv/cyberv-15-bench/apps/insightcoreerpmilkart/insightcoreerpmilkart/public/js/patient_appointment_calendar.js
-// Patient Appointment Calendar - Enhanced with Advanced Filtering
+// /home/cyberv/temp-bench/apps/milkart_reservations/milkart_reservations/public/js/patient_appointment_calendar_enhanced.js
+// Patient Appointment Calendar - Enhanced with Advanced Filtering + Conditional Drag-Drop Reschedule
 console.log('Patient Appointment Calendar script loaded - waiting for page initialization');
 
 let currentView = 'month';
@@ -14,18 +14,18 @@ function initializePage() {
         setTimeout(initializePage, 100);
         return;
     }
-    
+
     if (!frappe.pages) {
         console.log('Frappe pages not available yet, retrying...');
         setTimeout(initializePage, 100);
         return;
     }
-    
+
     console.log('Setting up page handler for patient-appointment-calendar');
-    
+
     frappe.pages['patient-appointment-calendar'].on_page_load = function(wrapper) {
         console.log('Patient Appointment Calendar page loading...');
-        
+
         try {
             // Create the page
             var page = frappe.ui.make_app_page({
@@ -33,7 +33,7 @@ function initializePage() {
                 title: 'Patient Appointment Calendar',
                 single_column: true
             });
-            
+
             // Add main container
             $(wrapper).append(`
                 <div class="patient-appointment-calendar-container">
@@ -41,7 +41,7 @@ function initializePage() {
                         <h2><i class="fa fa-calendar"></i> Patient Appointment Calendar</h2>
                         <p>Manage and view all patient appointments</p>
                     </div>
-                    
+
                     <!-- Calendar Controls -->
                     <div class="calendar-controls">
                         <div class="view-controls">
@@ -59,7 +59,7 @@ function initializePage() {
                                     <i class="fa fa-list"></i> List
                                 </button>
                             </div>
-                            
+
                             <div class="navigation-controls">
                                 <button class="btn btn-default btn-sm" id="prev-period">
                                     <i class="fa fa-chevron-left"></i>
@@ -71,10 +71,10 @@ function initializePage() {
                                     <i class="fa fa-chevron-right"></i>
                                 </button>
                             </div>
-                            
+
                             <h4 id="current-period" style="display: inline-block; margin: 0 15px;"></h4>
                         </div>
-                        
+
                         <div class="filter-controls">
                             <button class="btn btn-primary btn-sm" id="refresh-appointments">
                                 <i class="fa fa-refresh"></i> Refresh
@@ -92,26 +92,26 @@ function initializePage() {
                                 <select class="form-control" id="status-filter">
                                     <option value="">All Status</option>
                                 </select>
-                                
+
                                 <select class="form-control" id="practitioner-filter">
                                     <option value="">All Practitioners</option>
                                 </select>
-                                
+
                                 <select class="form-control" id="department-filter">
                                     <option value="">All Departments</option>
                                 </select>
-                                
+
                                 <select class="form-control" id="appointment-type-filter">
                                     <option value="">All Appointment Types</option>
                                 </select>
                             </div>
-                            
+
                             <!-- Advanced Filters Toggle -->
                             <button class="btn btn-default btn-sm" id="toggle-advanced-filters">
                                 <i class="fa fa-filter"></i> Advanced Filters
                             </button>
                         </div>
-                        
+
                         <!-- Advanced Filters Panel -->
                         <div class="advanced-filters-panel" id="advanced-filters-panel" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
                             <div class="row">
@@ -138,10 +138,11 @@ function initializePage() {
                                     <select class="form-control" id="appointment-for-filter">
                                         <option value="">All</option>
                                         <option value="Practitioner">Practitioner</option>
+                                        <option value="Service Unit">Service Unit</option>
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <div class="row" style="margin-top: 10px;">
                                 <div class="col-sm-3">
                                     <label>Gender</label>
@@ -179,7 +180,7 @@ function initializePage() {
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <div class="row" style="margin-top: 10px;">
                                 <div class="col-sm-6">
                                     <label>Date Range</label>
@@ -208,7 +209,7 @@ function initializePage() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="date-range-filter" id="date-range-section" style="display: none; margin-top: 10px;">
                             <input type="date" class="form-control" id="list-start-date" style="display: inline-block; width: 140px;">
                             <span style="margin: 0 5px;">to</span>
@@ -218,30 +219,30 @@ function initializePage() {
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Filter Summary -->
                     <div class="filter-summary" id="filter-summary" style="display: none; margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 0.9em;">
                         <strong>Active Filters:</strong> <span id="active-filters-text"></span>
                         <span class="badge badge-primary" id="appointment-count">0 appointments</span>
                     </div>
-                    
+
                     <!-- Calendar Views Container -->
                     <div class="calendar-views-container">
                         <!-- Month View -->
                         <div id="month-view" class="calendar-view">
                             <div class="month-calendar" id="month-calendar"></div>
                         </div>
-                        
+
                         <!-- Week View -->
                         <div id="week-view" class="calendar-view" style="display: none;">
                             <div class="week-calendar" id="week-calendar"></div>
                         </div>
-                        
+
                         <!-- Day View -->
                         <div id="day-view" class="calendar-view" style="display: none;">
                             <div class="day-calendar" id="day-calendar"></div>
                         </div>
-                        
+
                         <!-- List View -->
                         <div id="list-view" class="calendar-view" style="display: none;">
                             <div class="list-view-section">
@@ -254,15 +255,15 @@ function initializePage() {
                     </div>
                 </div>
             `);
-            
+
             // Initialize functionality
             setupEventHandlers();
             initializeCalendar();
             loadAppointments();
             loadFilterOptions();
-            
+
             console.log('Patient Appointment Calendar page loaded successfully');
-            
+
         } catch (error) {
             console.error('Error loading Patient Appointment Calendar:', error);
             showError(wrapper, error);
@@ -270,6 +271,9 @@ function initializePage() {
     };
 }
 
+/* -------------------------
+   UI / Event Handlers
+--------------------------*/
 function setupEventHandlers() {
     // View controls
     $('#show-canceled').off('change').on('change', function() {
@@ -279,70 +283,65 @@ function setupEventHandlers() {
         var view = $(this).data('view');
         switchView(view);
     });
-    
+
     // Navigation controls
     $('#prev-period').off('click').on('click', function() {
         navigatePeriod(-1);
     });
-    
     $('#next-period').off('click').on('click', function() {
         navigatePeriod(1);
     });
-    
     $('#today-btn').off('click').on('click', function() {
         currentDate = frappe.datetime.get_today();
-        console.log('Going to today:', currentDate, 'Month:', moment(currentDate).format('MMMM YYYY'));
-        // Clear all data to force fresh load
         allAppointments = [];
         filteredAppointments = [];
         refreshCurrentView();
     });
-    
+
     // Filter controls
     $('#refresh-appointments').off('click').on('click', function() {
         loadAppointments();
     });
-    
     $('#add-appointment').off('click').on('click', function() {
         frappe.new_doc('Patient Appointment');
     });
-    
-    // Quick filters
     $('#status-filter, #practitioner-filter, #department-filter, #appointment-type-filter').off('change').on('change', function() {
         applyFilters();
     });
-    
+
     // Advanced filters
     $('#toggle-advanced-filters').off('click').on('click', function() {
         $('#advanced-filters-panel').slideToggle();
         $(this).toggleClass('active');
     });
-    
     $('#apply-filters').off('click').on('click', function() {
         applyFilters();
     });
-    
     $('#clear-filters').off('click').on('click', function() {
         clearAllFilters();
     });
-    
     $('#apply-date-range').off('click').on('click', function() {
         applyFilters();
     });
 
-        // Set initial active view
+    // Set initial active view
     setTimeout(function() {
         $('[data-view="month"]').addClass('active');
         $('#month-view').show().addClass('active');
     }, 100);
 
-        // Enable drag-drop rescheduling
+    /* ---------------------------------------------------
+       Drag & Drop: conditional behavior by appointment_for
+       - Service Unit  -> show custom availability dialog
+       - Practitioner  -> original confirm + reschedule
+    ----------------------------------------------------*/
+
+    // Make appointment cards draggable
     $(document).on('dragstart', '.appointment-badge, .week-appointment', function(e) {
         var apptName = $(this).data('name');
         e.originalEvent.dataTransfer.setData('text/plain', apptName);
         $(this).addClass('dragging');
     });
-
     $(document).on('dragend', '.appointment-badge, .week-appointment', function() {
         $(this).removeClass('dragging');
     });
@@ -355,86 +354,88 @@ function setupEventHandlers() {
 
     $(document).on('drop', '.month-day, .week-day', function(e) {
         e.preventDefault();
-        var apptName = e.originalEvent.dataTransfer.getData('text/plain');
+        const apptName = e.originalEvent.dataTransfer.getData('text/plain');
         if (!apptName) return;
 
-        // Get target date from the dropped cell
-        var targetDate;
-        if ($(this).hasClass('month-day')) {
-            targetDate = $(this).find('.day-number').text().trim();
-            var monthYear = $('#current-period').text().trim(); // e.g., "October 2025"
-            var fullDate = moment(monthYear + ' ' + targetDate, 'MMMM YYYY D').format('YYYY-MM-DD');
-            if (!fullDate || fullDate === 'Invalid date') {
-                // fallback: use calendar logic
-                var weekRow = $(this).closest('.week-row');
-                var weekStart = weekRow.data('week-start'); // we'll set this in month view
-                // Instead, better: get from data attribute (see Step 3)
-            }
-        } else if ($(this).hasClass('week-day')) {
-            targetDate = $(this).find('.week-day-date').text().trim();
-            var weekRange = $('#current-period').text(); // e.g., "Week 42 - Oct 13 to Oct 19, 2025"
-            // Extract year from week range
-            var yearMatch = weekRange.match(/(\d{4})/);
-            var year = yearMatch ? yearMatch[1] : moment().year();
-            var month = $(this).find('.week-day-name').text(); // e.g., "Mon"
-            // Better: store date in data attribute (see Step 3)
-        }
-
-        // ✅ BETTER: Store date in day cell
-        targetDate = $(this).data('date');
+        // Target date from cell (we always set data-date on cells)
+        const targetDate = $(this).data('date');
         if (!targetDate) {
             frappe.msgprint(__('Could not determine target date.'));
             return;
         }
 
-        // Fetch the appointment doc to get practitioner, etc.
+        // Fetch the appointment doc to branch by appointment_for
         frappe.call({
             method: 'frappe.client.get',
-            args: {
-                doctype: 'Patient Appointment',
-                name: apptName
-            },
+            args: { doctype: 'Patient Appointment', name: apptName },
             callback: function(r) {
-                if (r.message) {
-                    var appt = r.message;
-                    // Prevent rescheduling to same date
-                    if (appt.appointment_date === targetDate) {
-                        frappe.msgprint(__('Same date selected.'));
-                        return;
-                    }
+                if (!r.message) return;
+                const appt = r.message;
 
-                    // Show "Available Slots" dialog for target date
-                    showRescheduleDialog(appt, targetDate);
+                // No-op if same date
+                if (appt.appointment_date === targetDate) {
+                    frappe.msgprint(__('Same date selected.'));
+                    return;
+                }
+
+                // Branch by appointment_for
+                if (appt.appointment_for === 'Service Unit') {
+                    // Show custom availability dialog for new date, then reschedule to picked slot
+                    showServiceUnitRescheduleDialog(appt, targetDate);
+                } else {
+                    // Keep original reschedule behavior
+                    const new_start_display = moment(targetDate + ' ' + (appt.appointment_time || '00:00:00')).format('DD MMM YYYY [at] HH:mm');
+                    frappe.confirm(
+                        __(`Reschedule appointment to ${new_start_display}?`),
+                        () => {
+                            const new_time = (appt.appointment_time || '00:00:00');
+                            frappe.call({
+                                method: 'milkart_reservations.overrides.patient_appointment.reschedule_via_calendar',
+                                args: {
+                                    docname: appt.name,
+                                    new_date: targetDate,
+                                    new_time: new_time
+                                },
+                                callback: (r) => {
+                                    if (r.message && r.message.success) {
+                                        frappe.show_alert({ message: __('Rescheduled successfully'), indicator: 'green' });
+                                        refreshCurrentView();
+                                    } else {
+                                        frappe.msgprint(__('Reschedule failed'));
+                                        refreshCurrentView();
+                                    }
+                                },
+                                error: () => {
+                                    refreshCurrentView();
+                                }
+                            });
+                        },
+                        () => {
+                            // cancel -> nothing (DOM stays as is until refresh)
+                        }
+                    );
                 }
             }
         });
     });
 }
 
+/* -------------------------
+   Filter Option Loaders
+--------------------------*/
 function loadFilterOptions() {
-    // Load status options
+    // Status
     var statusOptions = ['Open', 'Scheduled', 'Confirmed', 'Closed', 'Cancelled', 'No Show'];
     var statusFilter = $('#status-filter');
     statusOptions.forEach(function(status) {
         statusFilter.append('<option value="' + status + '">' + status + '</option>');
     });
-    
-    // Load practitioners with error handling
+
     loadPractitioners();
-    
-    // Load departments with error handling
     loadDepartments();
-    
-    // Load appointment types with error handling
     loadAppointmentTypes();
-    
-    // Load patients with error handling
     loadPatients();
-    
-    // Load service units with error handling
     loadServiceUnits();
-    
-    // Load companies with error handling
     loadCompanies();
 }
 
@@ -450,16 +451,12 @@ function loadPractitioners() {
             if (response.message) {
                 var practitionerFilter = $('#practitioner-filter');
                 response.message.forEach(function(practitioner) {
-                    var displayName = practitioner.first_name || practitioner.last_name ? 
-                        (practitioner.first_name || '') + ' ' + (practitioner.last_name || '') : 
+                    var displayName = (practitioner.first_name || practitioner.last_name) ?
+                        `${practitioner.first_name || ''} ${practitioner.last_name || ''}`.trim() :
                         practitioner.name;
                     practitionerFilter.append('<option value="' + practitioner.name + '">' + displayName + '</option>');
                 });
             }
-        },
-        error: function(err) {
-            console.warn('Error loading practitioners:', err);
-            // Continue without practitioners filter
         }
     });
 }
@@ -476,14 +473,9 @@ function loadDepartments() {
             if (response.message) {
                 var departmentFilter = $('#department-filter');
                 response.message.forEach(function(dept) {
-                    var displayName = dept.department || dept.name;
-                    departmentFilter.append('<option value="' + dept.name + '">' + displayName + '</option>');
+                    departmentFilter.append('<option value="' + dept.name + '">' + (dept.department || dept.name) + '</option>');
                 });
             }
-        },
-        error: function(err) {
-            console.warn('Error loading departments:', err);
-            // Continue without departments filter
         }
     });
 }
@@ -507,10 +499,6 @@ function loadAppointmentTypes() {
                     }
                 });
             }
-        },
-        error: function(err) {
-            console.warn('Error loading appointment types:', err);
-            // Continue without appointment types filter
         }
     });
 }
@@ -527,14 +515,9 @@ function loadPatients() {
             if (response.message) {
                 var patientFilter = $('#patient-filter');
                 response.message.forEach(function(patient) {
-                    var displayName = patient.patient_name || patient.name;
-                    patientFilter.append('<option value="' + patient.name + '">' + displayName + '</option>');
+                    patientFilter.append('<option value="' + patient.name + '">' + (patient.patient_name || patient.name) + '</option>');
                 });
             }
-        },
-        error: function(err) {
-            console.warn('Error loading patients:', err);
-            // Continue without patients filter
         }
     });
 }
@@ -551,14 +534,11 @@ function loadServiceUnits() {
             if (response.message) {
                 var serviceUnitFilter = $('#service-unit-filter');
                 response.message.forEach(function(unit) {
-                    var displayName = unit.healthcare_service_unit_name || unit.name;
-                    serviceUnitFilter.append('<option value="' + unit.name + '">' + displayName + '</option>');
+                    serviceUnitFilter.append('<option value="' + unit.name + '">' + (unit.healthcare_service_unit_name || unit.name) + '</option>');
                 });
             }
         },
-        error: function(err) {
-            console.warn('Error loading service units:', err);
-            // Try alternative field names
+        error: function() {
             loadServiceUnitsAlternative();
         }
     });
@@ -567,11 +547,7 @@ function loadServiceUnits() {
 function loadServiceUnitsAlternative() {
     frappe.call({
         method: 'frappe.client.get_list',
-        args: {
-            doctype: 'Healthcare Service Unit',
-            fields: ['name'],
-            limit: 100
-        },
+        args: { doctype: 'Healthcare Service Unit', fields: ['name'], limit: 100 },
         callback: function(response) {
             if (response.message) {
                 var serviceUnitFilter = $('#service-unit-filter');
@@ -580,9 +556,7 @@ function loadServiceUnitsAlternative() {
                 });
             }
         },
-        error: function(err) {
-            console.warn('Error loading service units with alternative method:', err);
-            // Hide service unit filter if it fails
+        error: function() {
             $('#service-unit-filter').closest('.col-sm-3').hide();
         }
     });
@@ -591,11 +565,7 @@ function loadServiceUnitsAlternative() {
 function loadCompanies() {
     frappe.call({
         method: 'frappe.client.get_list',
-        args: {
-            doctype: 'Company',
-            fields: ['name'],
-            limit: 20
-        },
+        args: { doctype: 'Company', fields: ['name'], limit: 20 },
         callback: function(response) {
             if (response.message) {
                 var companyFilter = $('#company-filter');
@@ -603,48 +573,34 @@ function loadCompanies() {
                     companyFilter.append('<option value="' + company.name + '">' + company.name + '</option>');
                 });
             }
-        },
-        error: function(err) {
-            console.warn('Error loading companies:', err);
-            // Continue without companies filter
         }
     });
 }
 
+/* -------------------------
+   Filtering
+--------------------------*/
 function applyFilters() {
-    if (allAppointments.length === 0) {
-        console.log('No appointments to filter');
-        return;
-    }
-    
+    if (allAppointments.length === 0) return;
+
     var filters = getCurrentFilters();
     var dateRange = getDateRange();
-    
-    console.log('Applying filters with date range:', dateRange);
-    
-    // First filter by date range
+
     var dateFilteredAppointments = allAppointments.filter(function(appt) {
         return appt.appointment_date >= dateRange.start && appt.appointment_date <= dateRange.end;
     });
-    
-    console.log('After date filtering:', dateFilteredAppointments.length);
-    
-    // Then apply other filters
+
     filteredAppointments = dateFilteredAppointments.filter(function(appt) {
         return matchesAllFilters(appt, filters);
     });
-    
-    console.log('After all filtering:', filteredAppointments.length);
-    
+
     updateFilterSummary(filters);
-    
-    // Display the filtered appointments for CURRENT view
     displayAppointmentsForCurrentView(filteredAppointments);
 }
 
 function getCurrentFilters() {
     var dateRange = getDateRange();
-    
+
     return {
         status: $('#status-filter').val(),
         practitioner: $('#practitioner-filter').val(),
@@ -665,78 +621,37 @@ function getCurrentFilters() {
 }
 
 function matchesAllFilters(appointment, filters) {
-     // NEW: Hide canceled appointments unless explicitly requested
-    if (appointment.status === 'Cancelled' && !$('#show-canceled').is(':checked')) {
-        return false;
-    }
-    // Status filter
+    if (appointment.status === 'Cancelled' && !$('#show-canceled').is(':checked')) return false;
     if (filters.status && appointment.status !== filters.status) return false;
-    
-    // Practitioner filter
     if (filters.practitioner && appointment.practitioner !== filters.practitioner) return false;
-    
-    // Department filter
     if (filters.department && appointment.department !== filters.department) return false;
-    
-    // Appointment type filter
     if (filters.appointmentType && appointment.appointment_type !== filters.appointmentType) return false;
-    
-    // Patient filter
     if (filters.patient && appointment.patient !== filters.patient) return false;
-    
-    // Service unit filter
     if (filters.serviceUnit && appointment.service_unit !== filters.serviceUnit) return false;
-    
-    // Company filter
     if (filters.company && appointment.company !== filters.company) return false;
-    
-    // Appointment for filter
     if (filters.appointmentFor && appointment.appointment_for !== filters.appointmentFor) return false;
-    
-    // Gender filter
     if (filters.gender && appointment.patient_sex !== filters.gender) return false;
-    
-    // Duration filter
     if (filters.duration && parseInt(appointment.duration) !== parseInt(filters.duration)) return false;
-    
-    // Video conferencing filter
+
     if (filters.videoConferencing !== '') {
         var hasVideo = appointment.add_video_conferencing ? '1' : '0';
         if (hasVideo !== filters.videoConferencing) return false;
     }
-    
-    // Invoiced filter
     if (filters.invoiced !== '') {
         var isInvoiced = appointment.invoiced ? '1' : '0';
         if (isInvoiced !== filters.invoiced) return false;
     }
-    
-    // Time range filter
     if (filters.timeRange && appointment.appointment_time) {
-        var time = appointment.appointment_time;
-        var hour = parseInt(time.split(':')[0]);
-        
-        switch(filters.timeRange) {
-            case 'morning':
-                if (hour < 6 || hour >= 12) return false;
-                break;
-            case 'afternoon':
-                if (hour < 12 || hour >= 18) return false;
-                break;
-            case 'evening':
-                if (hour < 18 || hour >= 24) return false;
-                break;
-        }
+        var hour = parseInt((appointment.appointment_time || '00:00').split(':')[0]);
+        if (filters.timeRange === 'morning' && (hour < 6 || hour >= 12)) return false;
+        if (filters.timeRange === 'afternoon' && (hour < 12 || hour >= 18)) return false;
+        if (filters.timeRange === 'evening' && (hour < 18 || hour >= 24)) return false;
     }
-    
-    // Date range filter (already handled by the main query)
-    
     return true;
 }
 
 function updateFilterSummary(filters) {
     var activeFilters = [];
-    
     if (filters.status) activeFilters.push('Status: ' + filters.status);
     if (filters.practitioner) activeFilters.push('Practitioner: ' + $('#practitioner-filter option:selected').text());
     if (filters.department) activeFilters.push('Department: ' + $('#department-filter option:selected').text());
@@ -751,7 +666,7 @@ function updateFilterSummary(filters) {
     if (filters.invoiced === '1') activeFilters.push('Invoiced');
     if (filters.invoiced === '0') activeFilters.push('Not Invoiced');
     if (filters.timeRange) activeFilters.push('Time: ' + filters.timeRange);
-    
+
     if (activeFilters.length > 0) {
         $('#active-filters-text').text(activeFilters.join(', '));
         $('#appointment-count').text(filteredAppointments.length + ' appointments');
@@ -762,98 +677,68 @@ function updateFilterSummary(filters) {
 }
 
 function clearAllFilters() {
-    // Clear all filter dropdowns
     $('.form-control').val('');
-    
-    // Reset date range to current view
     initializeCalendar();
-    
-    // Reapply filters (which will show all appointments)
     applyFilters();
 }
 
+/* -------------------------
+   View Switching / Dates
+--------------------------*/
 function switchView(view) {
-    console.log('Switching to view:', view);
     currentView = view;
     $('[data-view]').removeClass('active');
     $('[data-view="' + view + '"]').addClass('active');
     $('.calendar-view').hide().removeClass('active');
     $('#' + view + '-view').show().addClass('active');
-    if (view === 'list') {
-        $('#date-range-section').show();
-    } else {
-        $('#date-range-section').hide();
-    }
+    if (view === 'list') $('#date-range-section').show(); else $('#date-range-section').hide();
     updatePeriodDisplay();
-    // ALWAYS refresh to ensure correct data for current date + view
     refreshCurrentView();
 }
 
 function navigatePeriod(direction) {
-    console.log('Navigating period:', direction, 'Current view:', currentView, 'Current date:', currentDate);
-    
     var momentDate = moment(currentDate);
-    
     switch(currentView) {
         case 'month':
-            // For month view, navigate by month and set to 1st day of month
             currentDate = momentDate.add(direction, 'months').startOf('month').format('YYYY-MM-DD');
-            console.log('New month date:', currentDate, 'Month:', moment(currentDate).format('MMMM YYYY'));
             break;
         case 'week':
             currentDate = momentDate.add(direction, 'weeks').format('YYYY-MM-DD');
-            console.log('New week date:', currentDate);
             break;
         case 'day':
             currentDate = momentDate.add(direction, 'days').format('YYYY-MM-DD');
-            console.log('New day date:', currentDate);
             break;
         case 'list':
             var startDate = moment($('#list-start-date').val());
             var endDate = moment($('#list-end-date').val());
             var rangeDays = endDate.diff(startDate, 'days');
-            
             startDate.add(direction * (rangeDays + 1), 'days');
             endDate.add(direction * (rangeDays + 1), 'days');
-            
             $('#list-start-date').val(startDate.format('YYYY-MM-DD'));
             $('#list-end-date').val(endDate.format('YYYY-MM-DD'));
-            console.log('New list date range:', startDate.format('YYYY-MM-DD'), 'to', endDate.format('YYYY-MM-DD'));
             break;
     }
-    
-    // Force complete refresh of the view
     refreshCurrentView();
 }
 
 function refreshCurrentView() {
-    console.log('Refreshing current view:', currentView);
-    
-    // Show loading state
     $('#loading-message').show();
     $('.calendar-view:visible .calendar-content').hide();
     $('#appointments-container').hide();
-    
-    // Update period display immediately
+
     updatePeriodDisplay();
-    
-    // Clear ALL data to force fresh load
     allAppointments = [];
     filteredAppointments = [];
-    
-    // Get date range based on current view
+
     var dateRange = getDateRange();
-    
-    console.log('Date range for refresh:', dateRange, 'Current date:', currentDate);
-    
-    // Load appointments for the new period
+
     frappe.call({
         method: 'frappe.client.get_list',
         args: {
             doctype: 'Patient Appointment',
             fields: [
                 'name', 'patient', 'patient_name', 'practitioner', 'practitioner_name',
-                'appointment_date', 'appointment_time', 'department', 'status', 
+                'appointment_date', 'appointment_time', 'department', 'status',
                 'appointment_type', 'docstatus', 'service_unit', 'company',
                 'appointment_for', 'patient_sex', 'duration', 'add_video_conferencing',
                 'invoiced', 'paid_amount', 'mode_of_payment', 'referring_practitioner',
@@ -869,20 +754,15 @@ function refreshCurrentView() {
         callback: function(response) {
             $('#loading-message').hide();
             if (response.message && response.message.length > 0) {
-                console.log('Appointments loaded for refresh:', response.message.length);
-                console.log('Date range loaded:', dateRange.start, 'to', dateRange.end);
                 allAppointments = response.message;
                 var filters = getCurrentFilters();
                 filteredAppointments = allAppointments.filter(function(appt) {
                     return matchesAllFilters(appt, filters);
                 });
-                console.log('Filtered appointments after refresh:', filteredAppointments.length);
             } else {
-                console.log('No appointments found in date range for refresh:', dateRange);
                 allAppointments = [];
                 filteredAppointments = [];
             }
-            // ALWAYS render the view — even if empty
             displayAppointmentsForCurrentView(filteredAppointments);
         },
         error: function(err) {
@@ -894,46 +774,18 @@ function refreshCurrentView() {
 }
 
 function displayAppointmentsForCurrentView(appointments) {
-    console.log('Displaying appointments for current view:', currentView, 'Count:', appointments.length);
-    
     switch(currentView) {
-        case 'month':
-            displayMonthView(appointments);
-            break;
-        case 'week':
-            displayWeekView(appointments);
-            break;
-        case 'day':
-            displayDayView(appointments);
-            break;
-        case 'list':
-            displayListView(appointments);
-            break;
+        case 'month': displayMonthView(appointments); break;
+        case 'week':  displayWeekView(appointments);  break;
+        case 'day':   displayDayView(appointments);   break;
+        case 'list':  displayListView(appointments);  break;
     }
 }
 
-function filterAppointmentsForCurrentView(appointments) {
-    var dateRange = getDateRange();
-    
-    // Filter by date range first
-    var filtered = appointments.filter(function(appt) {
-        return appt.appointment_date >= dateRange.start && appt.appointment_date <= dateRange.end;
-    });
-    
-    // Apply additional filters
-    var filters = getCurrentFilters();
-    filtered = filtered.filter(function(appt) {
-        return matchesAllFilters(appt, filters);
-    });
-    
-    return filtered;
-}
 function initializeCalendar() {
-    // Set default date range
     var today = new Date();
     var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
     $('#start-date').val(frappe.datetime.obj_to_str(firstDay));
     $('#end-date').val(frappe.datetime.obj_to_str(lastDay));
     $('#list-start-date').val(frappe.datetime.obj_to_str(firstDay));
@@ -943,212 +795,65 @@ function initializeCalendar() {
 function getDateRange() {
     var startDate, endDate;
     var momentDate = moment(currentDate);
-    console.log('Getting date range for currentDate:', currentDate, 'View:', currentView);
     switch(currentView) {
         case 'month':
-            // Return Moment objects (not strings) for consistent formatting later
             startDate = momentDate.clone().startOf('month').startOf('week');
-            endDate = momentDate.clone().endOf('month').endOf('week');
-            console.log('Month calendar range:', startDate.format('YYYY-MM-DD'), 'to', endDate.format('YYYY-MM-DD'), 'Month:', momentDate.format('MMMM YYYY'));
+            endDate   = momentDate.clone().endOf('month').endOf('week');
             break;
         case 'week':
             startDate = momentDate.clone().startOf('week');
-            endDate = momentDate.clone().endOf('week');
-            console.log('Week range:', startDate.format('YYYY-MM-DD'), 'to', endDate.format('YYYY-MM-DD'));
+            endDate   = momentDate.clone().endOf('week');
             break;
         case 'day':
             startDate = momentDate.clone();
-            endDate = momentDate.clone();
-            console.log('Day range:', startDate.format('YYYY-MM-DD'));
+            endDate   = momentDate.clone();
             break;
         case 'list':
             var startVal = $('#list-start-date').val();
-            var endVal = $('#list-end-date').val();
+            var endVal   = $('#list-end-date').val();
             startDate = startVal ? moment(startVal) : momentDate.clone().startOf('month');
-            endDate = endVal ? moment(endVal) : momentDate.clone().endOf('month');
-            console.log('List range:', startDate.format('YYYY-MM-DD'), 'to', endDate.format('YYYY-MM-DD'));
+            endDate   = endVal   ? moment(endVal)   : momentDate.clone().endOf('month');
             break;
     }
-    // Always return formatted strings
-    return {
-        start: startDate.format('YYYY-MM-DD'),
-        end: endDate.format('YYYY-MM-DD')
-    };
+    return { start: startDate.format('YYYY-MM-DD'), end: endDate.format('YYYY-MM-DD') };
 }
 
 function updatePeriodDisplay() {
     var dateRange = getDateRange();
     var displayText = '';
-    var isValid = dateRange.start && dateRange.end;
-
     switch(currentView) {
         case 'month':
-            if (isValid) {
-                var monthDate = moment(dateRange.start);
-                if (monthDate.isValid()) {
-                    displayText = monthDate.format('MMMM YYYY');
-                } else {
-                    displayText = 'Invalid Month';
-                }
-            } else {
-                displayText = 'Select Month';
-            }
-            break;
-
+            displayText = moment(dateRange.start).format('MMMM YYYY'); break;
         case 'week':
-            if (isValid) {
-                var weekStart = moment(dateRange.start);
-                var weekEnd = moment(dateRange.end);
-                if (weekStart.isValid() && weekEnd.isValid()) {
-                    var weekNumber = weekStart.week();
-                    displayText = 'Week ' + weekNumber + ' - ' + 
-                                 weekStart.format('MMM D') + ' to ' + 
-                                 weekEnd.format('MMM D, YYYY');
-                } else {
-                    displayText = 'Invalid Week';
-                }
-            } else {
-                displayText = 'Select Week';
-            }
+            var ws = moment(dateRange.start), we = moment(dateRange.end);
+            displayText = `Week ${ws.week()} - ${ws.format('MMM D')} to ${we.format('MMM D, YYYY')}`;
             break;
-
         case 'day':
-            if (dateRange.start) {
-                var dayDate = moment(dateRange.start);
-                if (dayDate.isValid()) {
-                    displayText = dayDate.format('dddd, MMMM D, YYYY');
-                } else {
-                    displayText = 'Invalid Day';
-                }
-            } else {
-                displayText = 'Select Day';
-            }
-            break;
-
+            displayText = moment(dateRange.start).format('dddd, MMMM D, YYYY'); break;
         case 'list':
-            if (isValid) {
-                var listStart = moment(dateRange.start);
-                var listEnd = moment(dateRange.end);
-                if (listStart.isValid() && listEnd.isValid()) {
-                    displayText = listStart.format('MMM D, YYYY') + ' to ' + listEnd.format('MMM D, YYYY');
-                } else {
-                    displayText = 'Invalid Date Range';
-                }
-            } else {
-                displayText = 'Set Date Range';
-            }
+            var ls = moment(dateRange.start), le = moment(dateRange.end);
+            displayText = `${ls.format('MMM D, YYYY')} to ${le.format('MMM D, YYYY')}`;
             break;
     }
     $('#current-period').text(displayText);
 }
 
-function loadAppointments() {
-    console.log('Loading all appointments for initial view...');
-    
-    // Show loading state
-    $('#loading-message').show();
-    $('.calendar-view:visible .calendar-content').hide();
-    $('#appointments-container').hide();
-    
-    updatePeriodDisplay();
-    
-    // Get date range based on current view
-    var dateRange = getDateRange();
-    
-    frappe.call({
-        method: 'frappe.client.get_list',
-        args: {
-            doctype: 'Patient Appointment',
-            fields: [
-                'name', 'patient', 'patient_name', 'practitioner', 'practitioner_name',
-                'appointment_date', 'appointment_time', 'department', 'status', 
-                'appointment_type', 'docstatus', 'service_unit', 'company',
-                'appointment_for', 'patient_sex', 'duration', 'add_video_conferencing',
-                'invoiced', 'paid_amount', 'mode_of_payment', 'referring_practitioner',
-                'position_in_queue'
-            ],
-            filters: [
-                ['appointment_date', '>=', dateRange.start],
-                ['appointment_date', '<=', dateRange.end]
-            ],
-            order_by: 'appointment_date, appointment_time asc',
-            limit: 1000
-        },
-        callback: function(response) {
-            $('#loading-message').hide();
-            
-            if (response.message && response.message.length > 0) {
-                console.log('All appointments loaded:', response.message.length);
-                
-                // Store all appointments for filter purposes
-                allAppointments = response.message;
-                
-                // Reset filtered appointments to force fresh filtering
-                filteredAppointments = [];
-                
-                // Apply current filters
-                applyFilters();
-                
-            } else {
-                console.log('No appointments found in date range');
-                allAppointments = [];
-                filteredAppointments = [];
-                showNoAppointmentsMessage();
-            }
-        },
-        error: function(err) {
-            $('#loading-message').hide();
-            console.error('Error loading appointments:', err);
-            showMessage('Error loading appointments. Please try again.', 'danger');
-        }
-    });
-}
-function displayFilteredAppointments() {
-    if (filteredAppointments.length === 0) {
-        showNoAppointmentsMessage();
-        return;
-    }
-    
-    // Display based on current view
-    switch(currentView) {
-        case 'month':
-            displayMonthView(filteredAppointments);
-            break;
-        case 'week':
-            displayWeekView(filteredAppointments);
-            break;
-        case 'day':
-            displayDayView(filteredAppointments);
-            break;
-        case 'list':
-            displayListView(filteredAppointments);
-            break;
-    }
-}
-
-// [Keep all the display functions (displayMonthView, displayWeekView, displayDayView, displayListView) exactly as they were in the previous version]
-
+/* -------------------------
+   Month / Week / Day / List renderers
+--------------------------*/
 function displayMonthView(appointments) {
     var container = $('#month-calendar');
     container.empty();
-    
-    // ✅ Use currentDate to determine the intended month
+
     var intendedMonth = moment(currentDate);
     var monthStart = intendedMonth.clone().startOf('month');
     var monthEnd = intendedMonth.clone().endOf('month');
-    
-    // But render the full 6-week grid
+
     var calendarStart = monthStart.clone().startOf('week');
-    var calendarEnd = monthEnd.clone().endOf('week');
-    
+    var calendarEnd   = monthEnd.clone().endOf('week');
+
     var today = moment();
-    console.log('Displaying month view for:', intendedMonth.format('MMMM YYYY'), 'Appointments count:', appointments.length);
-    console.log('Calendar range:', calendarStart.format('YYYY-MM-DD'), 'to', calendarEnd.format('YYYY-MM-DD'));
-    
-    
-    console.log('Displaying month view for:', monthStart.format('MMMM YYYY'), 'Appointments count:', appointments.length);
-    
-    // Create month calendar structure
+
     var html = `
         <div class="month-calendar-grid">
             <div class="month-header">
@@ -1163,88 +868,73 @@ function displayMonthView(appointments) {
             </div>
             <div class="month-grid">
     `;
-    
-    // Start from the first Sunday of the calendar view
-    var calendarStart = monthStart.clone().startOf('week');
-    var calendarEnd = monthEnd.clone().endOf('week');
-    
+
     var currentDay = calendarStart.clone();
     var currentWeek = null;
     var weekHtml = '';
     var totalMonthAppointments = 0;
-    
-    console.log('Calendar range:', calendarStart.format('YYYY-MM-DD'), 'to', calendarEnd.format('YYYY-MM-DD'));
-    
-    while (currentDay.isBefore(calendarEnd) || currentDay.isSame(calendarEnd)) {
+
+    while (currentDay.isSameOrBefore(calendarEnd)) {
         var weekNumber = currentDay.week();
-        
-        // Start new week row
+
         if (weekNumber !== currentWeek) {
             if (currentWeek !== null) {
                 html += weekHtml + '</div>';
             }
             currentWeek = weekNumber;
             weekHtml = `<div class="week-row">`;
-            
-            // Add week number cell first
             weekHtml += `<div class="week-number-cell" title="Click to view week ${weekNumber}">${weekNumber}</div>`;
         }
-        
-        // Filter appointments for this specific day
+
         var dayAppointments = appointments.filter(function(appt) {
             return appt.appointment_date === currentDay.format('YYYY-MM-DD');
         });
-        
+
         totalMonthAppointments += dayAppointments.length;
-        
-        // Check if this is today
+
         var isToday = currentDay.isSame(today, 'day');
         var isCurrentMonth = currentDay.month() === monthStart.month();
         var dayDateStr = currentDay.format('YYYY-MM-DD');
+
         weekHtml += `<div class="month-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${dayDateStr}">`;
         weekHtml += `<div class="day-number ${isToday ? 'today' : ''}">${currentDay.date()}</div>`;
         weekHtml += `<div class="day-appointments">`;
-        
-        // Display appointments
+
         dayAppointments.forEach(function(appt) {
             var statusClass = getStatusClass(appt.status);
-            var timeDisplay = appt.appointment_time ? 
-                frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : '';
-            
+            var timeDisplay = appt.appointment_time ? frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : '';
             weekHtml += `
-                <div class="appointment-badge ${statusClass}" 
-                    data-name="${appt.name}" 
-                    data-date="${appt.appointment_date}"
-                    draggable="true" title="${appt.patient_name} - ${timeDisplay}">
+                <div class="appointment-badge ${statusClass}"
+                     data-name="${appt.name}"
+                     data-date="${appt.appointment_date}"
+                     draggable="true"
+                     title="${frappe.utils.escape_html(appt.patient_name || '')} - ${timeDisplay}">
                     <span class="appointment-time">${timeDisplay}</span>
-                    <span class="appointment-patient">${appt.patient_name}</span>
+                    <span class="appointment-patient">${frappe.utils.escape_html(appt.patient_name || '')}</span>
                 </div>
             `;
         });
-        
+
         if (dayAppointments.length === 0) {
             weekHtml += `<div class="no-appointments-day">No appointments</div>`;
         }
-        
+
         weekHtml += `</div></div>`;
         currentDay.add(1, 'day');
-        
-        // End week if we've reached Saturday or end of calendar
+
         if (currentDay.day() === 0 || currentDay.isAfter(calendarEnd)) {
             html += weekHtml + '</div>';
             weekHtml = '';
             currentWeek = null;
         }
     }
-    
-    // Close any remaining week
+
     if (weekHtml && weekHtml !== '<div class="week-row">') {
         html += weekHtml + '</div>';
     }
-    
-    html += `</div></div>`; // Close month-grid and month-calendar-grid
-    
-    // Add month summary
+
+    html += `</div></div>`;
+
     var monthSummary = `
         <div class="month-summary">
             <div class="month-total-appointments">
@@ -1253,40 +943,32 @@ function displayMonthView(appointments) {
             </div>
         </div>
     `;
-    
+
     container.html(html + monthSummary).show();
-    
-    // Bind click events
+
     $('.appointment-badge').off('click').on('click', function() {
         var appointmentName = $(this).data('name');
         frappe.set_route('Form', 'Patient Appointment', appointmentName);
     });
-    
-    // Add week number click functionality
+
     $('.week-number-cell').off('click').on('click', function() {
-        var weekNumber = parseInt($(this).text());
+        var weekNumber = parseInt($(this).text(), 10);
         var year = moment(currentDate).year();
         var weekStart = moment().year(year).week(weekNumber).startOf('week');
-        
-        // Switch to week view for the selected week
         currentDate = weekStart.format('YYYY-MM-DD');
         switchView('week');
     });
-    
-    console.log('Month view rendered for', monthStart.format('MMMM YYYY'), 'with', totalMonthAppointments, 'total appointments');
 }
+
 function displayWeekView(appointments) {
     var container = $('#week-calendar');
     container.empty();
-    
+
     var dateRange = getDateRange();
     var weekStart = moment(dateRange.start);
     var weekEnd = moment(dateRange.end);
     var today = moment();
-    
-    console.log('Displaying week view from:', dateRange.start, 'to:', dateRange.end);
-    console.log('Appointments to display:', appointments.length);
-    
+
     var html = `
         <div class="week-header-info">
             <div class="week-range">
@@ -1300,27 +982,20 @@ function displayWeekView(appointments) {
         </div>
         <div class="week-grid">
     `;
-    
+
     var totalWeekAppointments = 0;
-    
+
     for (let i = 0; i < 7; i++) {
         var currentDay = weekStart.clone().add(i, 'days');
         var dayDateStr = currentDay.format('YYYY-MM-DD');
         var isToday = currentDay.isSame(today, 'day');
-        
-        console.log('Checking day:', dayDateStr);
-        
-        // Filter appointments for this specific day
+
         var dayAppointments = appointments.filter(function(appt) {
-            var matches = appt.appointment_date === dayDateStr;
-            console.log('Appointment:', appt.name, 'Date:', appt.appointment_date, 'Matches:', matches);
-            return matches;
+            return appt.appointment_date === dayDateStr;
         });
-        
-        console.log('Day', dayDateStr, 'has', dayAppointments.length, 'appointments');
-        
+
         totalWeekAppointments += dayAppointments.length;
-        
+
         html += `
             <div class="week-day ${isToday ? 'today' : ''}" data-date="${dayDateStr}">
                 <div class="week-day-header">
@@ -1330,7 +1005,7 @@ function displayWeekView(appointments) {
                 </div>
                 <div class="week-day-appointments">
         `;
-        
+
         if (dayAppointments.length === 0) {
             html += `
                 <div class="no-appointments">
@@ -1339,36 +1014,33 @@ function displayWeekView(appointments) {
                 </div>
             `;
         } else {
-            // Sort appointments by time
             dayAppointments.sort(function(a, b) {
                 return (a.appointment_time || '').localeCompare(b.appointment_time || '');
             });
-            
+
             dayAppointments.forEach(function(appt) {
                 var statusClass = getStatusClass(appt.status);
-                var timeDisplay = appt.appointment_time ? 
-                    frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : 'All day';
-                
+                var timeDisplay = appt.appointment_time ? frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : 'All day';
+
                 html += `
-                        <div class="week-appointment ${statusClass}" 
-                                data-name="${appt.name}" 
-                                data-date="${appt.appointment_date}"
-                                draggable="true">
+                    <div class="week-appointment ${statusClass}"
+                         data-name="${appt.name}"
+                         data-date="${appt.appointment_date}"
+                         draggable="true">
                         <div class="appointment-time">${timeDisplay}</div>
-                        <div class="appointment-patient">${appt.patient_name}</div>
-                        <div class="appointment-practitioner">${appt.practitioner_name || 'N/A'}</div>
-                        <div class="appointment-type">${appt.appointment_type || ''}</div>
+                        <div class="appointment-patient">${frappe.utils.escape_html(appt.patient_name || '')}</div>
+                        <div class="appointment-practitioner">${frappe.utils.escape_html(appt.practitioner_name || 'N/A')}</div>
+                        <div class="appointment-type">${frappe.utils.escape_html(appt.appointment_type || '')}</div>
                     </div>
                 `;
             });
         }
-        
+
         html += `</div></div>`;
     }
-    
+
     html += `</div>`;
-    
-    // Add week summary
+
     var weekSummary = `
         <div class="week-summary">
             <div class="week-total-appointments">
@@ -1377,34 +1049,27 @@ function displayWeekView(appointments) {
             </div>
         </div>
     `;
-    
+
     container.html(html + weekSummary).show();
-    
+
     $('.week-appointment').off('click').on('click', function() {
         var appointmentName = $(this).data('name');
         frappe.set_route('Form', 'Patient Appointment', appointmentName);
     });
-    
-    console.log('Week view rendered with', totalWeekAppointments, 'total appointments');
 }
 
 function displayDayView(appointments) {
     var container = $('#day-calendar');
     container.empty();
-    
-    console.log('Displaying day view for:', currentDate, 'with', appointments.length, 'appointments');
-    
-    // Filter appointments for the specific day
+
     var dayAppointments = appointments.filter(function(appt) {
-        var matchesDate = appt.appointment_date === currentDate;
-        console.log('Appointment:', appt.name, 'Date:', appt.appointment_date, 'Matches:', matchesDate);
-        return matchesDate;
+        return appt.appointment_date === currentDate;
     });
-    
+
     var currentDay = moment(currentDate);
     var today = moment();
     var isToday = currentDay.isSame(today, 'day');
-    
+
     var html = `
         <div class="day-view">
             <div class="day-header ${isToday ? 'today-header' : ''}">
@@ -1421,7 +1086,7 @@ function displayDayView(appointments) {
             </div>
             <div class="day-timeline">
     `;
-    
+
     if (dayAppointments.length === 0) {
         html += `
             <div class="no-appointments-day-view">
@@ -1432,23 +1097,21 @@ function displayDayView(appointments) {
                     <button class="btn btn-primary btn-sm" onclick="frappe.new_doc('Patient Appointment')">
                         <i class="fa fa-plus"></i> Create New Appointment
                     </button>
-                    <button class="btn btn-default btn-sm" onclick="currentDate = '${today.format('YYYY-MM-DD')}'; refreshCurrentView()">
+                    <button class="btn btn-default btn-sm" onclick="currentDate='${today.format('YYYY-MM-DD')}'; refreshCurrentView()">
                         <i class="fa fa-calendar"></i> Go to Today
                     </button>
                 </div>
             </div>
         `;
     } else {
-        // Sort appointments by time
         dayAppointments.sort(function(a, b) {
             return (a.appointment_time || '').localeCompare(b.appointment_time || '');
         });
-        
+
         dayAppointments.forEach(function(appt) {
             var statusClass = getStatusClass(appt.status);
-            var timeDisplay = appt.appointment_time ? 
-                frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : 'Time not set';
-            
+            var timeDisplay = appt.appointment_time ? frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : 'Time not set';
+
             html += `
                 <div class="day-appointment ${statusClass}" data-name="${appt.name}">
                     <div class="appointment-time-slot">
@@ -1467,7 +1130,7 @@ function displayDayView(appointments) {
                             ${appt.appointment_type ? ' • ' + frappe.utils.escape_html(appt.appointment_type) : ''}
                         </div>
                         <div class="appointment-status-badge">
-                            <span class="badge ${getStatusClass(appt.status)}">${appt.status}</span>
+                            <span class="badge ${getStatusClass(appt.status)}">${frappe.utils.escape_html(appt.status || 'Unknown')}</span>
                             ${appt.add_video_conferencing ? '<span class="badge badge-info video-badge"><i class="fa fa-video-camera"></i> Video</span>' : ''}
                         </div>
                     </div>
@@ -1475,65 +1138,53 @@ function displayDayView(appointments) {
             `;
         });
     }
-    
+
     html += `</div></div>`;
     container.html(html).show();
-    
+
     $('.day-appointment').off('click').on('click', function() {
         var appointmentName = $(this).data('name');
         frappe.set_route('Form', 'Patient Appointment', appointmentName);
     });
-    
-    console.log('Day view rendered for:', currentDate);
 }
 
 function displayListView(appointments) {
     var container = $('#appointments-container');
     container.empty();
-    
+
     if (appointments.length === 0) {
         showNoAppointmentsMessage();
         return;
     }
-    
+
     var appointmentsByDate = {};
     appointments.forEach(function(appt) {
         var date = appt.appointment_date;
-        if (date) {
-            if (!appointmentsByDate[date]) {
-                appointmentsByDate[date] = [];
-            }
-            appointmentsByDate[date].push(appt);
-        }
+        if (!appointmentsByDate[date]) appointmentsByDate[date] = [];
+        appointmentsByDate[date].push(appt);
     });
-    
+
     var html = '';
     var dateKeys = Object.keys(appointmentsByDate).sort();
-    
+
     dateKeys.forEach(function(date) {
         var userDate = frappe.datetime.str_to_user(date);
-        
+
         html += `
             <div class="date-group">
                 <h4><i class="fa fa-calendar-o"></i> ${userDate}</h4>
                 <div class="appointments-list">
         `;
-        
+
         appointmentsByDate[date].forEach(function(appt) {
             var statusClass = getStatusClass(appt.status);
-            var timeDisplay = appt.appointment_time ? 
-                frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : 
-                'Time not set';
-            
+            var timeDisplay = appt.appointment_time ? frappe.datetime.str_to_user(appt.appointment_time, 'hh:mm A') : 'Time not set';
+
             var docstatusBadge = '';
-            if (appt.docstatus === 0) {
-                docstatusBadge = '<span class="badge badge-warning badge-xs">Draft</span> ';
-            } else if (appt.docstatus === 1) {
-                docstatusBadge = '<span class="badge badge-success badge-xs">Submitted</span> ';
-            } else if (appt.docstatus === 2) {
-                docstatusBadge = '<span class="badge badge-danger badge-xs">Cancelled</span> ';
-            }
-            
+            if (appt.docstatus === 0) docstatusBadge = '<span class="badge badge-warning badge-xs">Draft</span> ';
+            else if (appt.docstatus === 1) docstatusBadge = '<span class="badge badge-success badge-xs">Submitted</span> ';
+            else if (appt.docstatus === 2) docstatusBadge = '<span class="badge badge-danger badge-xs">Cancelled</span> ';
+
             html += `
                 <div class="appointment-item">
                     <div class="row">
@@ -1563,18 +1214,21 @@ function displayListView(appointments) {
                 </div>
             `;
         });
-        
+
         html += `</div></div>`;
     });
-    
+
     container.html(html).show();
-    
+
     $('.view-appointment').off('click').on('click', function() {
         var appointmentName = $(this).data('name');
         frappe.set_route('Form', 'Patient Appointment', appointmentName);
     });
 }
 
+/* -------------------------
+   Utilities / Messages
+--------------------------*/
 function getStatusClass(status) {
     switch(status) {
         case 'Open': return 'status-open';
@@ -1589,19 +1243,11 @@ function getStatusClass(status) {
 
 function showNoAppointmentsMessage() {
     var message = 'No appointments found';
-    if (currentView !== 'list') {
-        message += ' for the selected period';
-    }
-    if ($('#filter-summary').is(':visible')) {
-        message += ' matching the current filters';
-    }
-
-    // ONLY show message in Day and List views
-    if (currentView === 'day' || currentView === 'list') {
-        showMessage(message, 'warning');
-    }
-    // For 'month' and 'week', do nothing — the grid is rendered by display functions
+    if (currentView !== 'list') message += ' for the selected period';
+    if ($('#filter-summary').is(':visible')) message += ' matching the current filters';
+    if (currentView === 'day' || currentView === 'list') showMessage(message, 'warning');
 }
+
 function showMessage(message, type) {
     var container = $('.calendar-view:visible .calendar-content, #appointments-container').first();
     container.html(`
@@ -1625,126 +1271,231 @@ function showError(wrapper, error) {
     `);
 }
 
-function showRescheduleDialog(appointment_doc, target_date) {
-    // Reuse the existing availability dialog logic
-    let selected_slot = null;
-    let service_unit = null;
-    let duration = appointment_doc.duration || 15;
-    let add_video_conferencing = appointment_doc.add_video_conferencing || 0;
+/* -------------------------
+   Service Unit Reschedule (custom dialog)
+--------------------------*/
+function showServiceUnitRescheduleDialog(appt, targetDate) {
+    if (!appt.service_unit) {
+        frappe.msgprint(__('This appointment has no Service Unit set.'));
+        return;
+    }
 
-    let d = new frappe.ui.Dialog({
-        title: __('Reschedule Appointment'),
+    // Load available slots via your custom API
+    frappe.call({
+        method: 'milkart_reservations.api.service_unit_appointment.check_service_unit_availability',
+        args: {
+            service_unit: appt.service_unit,
+            date: targetDate
+        },
+        callback: function(r) {
+            if (!r.message) {
+                frappe.msgprint(__('No available time slots found for the selected date'));
+                return;
+            }
+            // Build & show dialog with selectable slots
+            show_availability_dialog_for_reschedule(r.message, appt, targetDate);
+        }
+    });
+}
+
+function show_availability_dialog_for_reschedule(html_content, appt, targetDate) {
+    let selectedTimeValue = null;
+
+    let dialog = new frappe.ui.Dialog({
+        title: __('Reschedule Service Unit Appointment - Available Slots'),
         fields: [
-            { fieldtype: 'Data', fieldname: 'patient', label: __('Patient'), read_only: 1 },
-            { fieldtype: 'Data', fieldname: 'practitioner', label: __('Practitioner'), read_only: 1 },
-            { fieldtype: 'Date', fieldname: 'appointment_date', label: __('New Date'), reqd: 1, default: target_date },
-            { fieldtype: 'Section Break' },
-            { fieldtype: 'HTML', fieldname: 'available_slots' }
+            { fieldname: 'html_content', fieldtype: 'HTML', options: html_content }
         ],
-        primary_action_label: __('Book New Slot'),
+        primary_action_label: __('Reschedule'),
         primary_action: function() {
-            if (!selected_slot) {
+            if (!selectedTimeValue) {
                 frappe.msgprint(__('Please select a time slot.'));
                 return;
             }
-
-            // Step 1: Cancel old appointment
+            // Use existing server method to reschedule (keeps original flow)
             frappe.call({
-                method: 'healthcare.healthcare.doctype.patient_appointment.patient_appointment.update_status',
+                method: 'milkart_reservations.overrides.patient_appointment.reschedule_via_calendar',
                 args: {
-                    appointment_id: appointment_doc.name,
-                    status: 'Cancelled'
+                    docname: appt.name,
+                    new_date: targetDate,
+                    new_time: selectedTimeValue
                 },
-                callback: function() {
-                    // Step 2: Create new appointment
-                    frappe.call({
-                        method: 'frappe.client.insert',
-                        args: {
-                            doc: {
-                                doctype: 'Patient Appointment',
-                                patient: appointment_doc.patient,
-                                practitioner: appointment_doc.practitioner,
-                                appointment_type: appointment_doc.appointment_type,
-                                appointment_for: appointment_doc.appointment_for,
-                                department: appointment_doc.department,
-                                service_unit: service_unit,
-                                appointment_date: d.get_value('appointment_date'),
-                                appointment_time: selected_slot,
-                                duration: duration,
-                                add_video_conferencing: add_video_conferencing,
-                                company: appointment_doc.company,
-                                mode_of_payment: appointment_doc.mode_of_payment,
-                                paid_amount: appointment_doc.paid_amount,
-                                billing_item: appointment_doc.billing_item,
-                                invoiced: appointment_doc.invoiced
-                            }
-                        },
-                        callback: function(r) {
-                            if (r.message) {
-                                frappe.show_alert(__('Appointment rescheduled successfully.'));
-                                d.hide();
-                                refreshCurrentView(); // ✅ Refresh calendar
-                            }
-                        }
-                    });
-                }
+                callback: (r) => {
+                    if (r.message && r.message.success) {
+                        frappe.show_alert({ message: __('Appointment rescheduled successfully'), indicator: 'green' });
+                        dialog.hide();
+                        refreshCurrentView();
+                    } else {
+                        frappe.msgprint(__('Reschedule failed'));
+                    }
+                },
+                error: () => { /* keep dialog open to try again */ }
             });
-        }
-    });
-
-    d.set_value('patient', appointment_doc.patient_name || appointment_doc.patient);
-    d.set_value('practitioner', appointment_doc.practitioner_name || appointment_doc.practitioner);
-    d.show();
-
-    // Load available slots for target date
-    frappe.call({
-        method: 'healthcare.healthcare.doctype.patient_appointment.patient_appointment.get_availability_data',
-        args: {
-            practitioner: appointment_doc.practitioner,
-            date: target_date,
-            appointment: appointment_doc
         },
-        callback: function(r) {
-            if (r.message && r.message.slot_details.length > 0) {
-                let slot_html = getSlotsForDialog(r.message.slot_details, target_date);
-                d.fields_dict.available_slots.$wrapper.html(slot_html);
+        secondary_action_label: __('Close'),
+        secondary_action: function() { dialog.hide(); }
+    });
 
-                // Make slots clickable
-                d.fields_dict.available_slots.$wrapper.on('click', 'button', function() {
-                    d.get_primary_btn().prop('disabled', false);
-                    selected_slot = $(this).data('name');
-                    service_unit = $(this).data('service-unit');
-                    duration = $(this).data('duration') || appointment_doc.duration || 15;
-                    add_video_conferencing = $(this).data('tele-conf') || 0;
-                });
-            } else {
-                d.fields_dict.available_slots.$wrapper.html(`<div class="text-muted">No slots available on ${target_date}</div>`);
+    dialog.show();
+
+    // Enhance buttons inside provided HTML to capture slot selection
+    setTimeout(() => {
+        enhance_dialog_with_selection(dialog, {
+            onSelect: function(displayText, timeValue) {
+                selectedTimeValue = timeValue;
+            },
+            enablePrimary: true // will enable primary on selection
+        });
+    }, 250);
+}
+
+/**
+ * Enhance any HTML of slots by turning visible times into selectable buttons.
+ * If options.onSelect is provided, it will be called with (display, value).
+ */
+function enhance_dialog_with_selection(dialog, options = {}) {
+    const dialog_body = dialog.body;
+
+    let timeButtons = Array.from(dialog_body.querySelectorAll('button')).filter(button => {
+        const text = (button.textContent || '').trim();
+        return text && (text.includes('AM') || text.includes('PM') || text.match(/\d{1,2}:\d{2}([ ]?[AP]M)?/i));
+    });
+
+    if (timeButtons.length === 0) {
+        timeButtons = Array.from(dialog_body.querySelectorAll('.btn, .slot-available, [data-time]'));
+    }
+
+    timeButtons.forEach(button => {
+        const originalTime = (button.getAttribute('data-time') || button.textContent || '').trim();
+        const timeValue = convert_display_time_to_value(originalTime);
+
+        button.setAttribute('data-original-time', originalTime);
+        button.setAttribute('data-time-value', timeValue);
+
+        button.removeAttribute('onclick');
+        button.onclick = null;
+        button.style.cursor = 'pointer';
+        button.classList.add('btn-primary');
+
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const selectedDisplayTime = this.getAttribute('data-original-time');
+            const selectedTimeValue = this.getAttribute('data-time-value');
+
+            // Visual selection
+            timeButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            frappe.show_alert({
+                message: __(`Selected time: ${selectedDisplayTime}`),
+                indicator: 'green'
+            });
+
+            if (typeof options.onSelect === 'function') {
+                options.onSelect(selectedDisplayTime, selectedTimeValue);
             }
+
+            if (options.enablePrimary) {
+                dialog.get_primary_btn().attr('disabled', false);
+            }
+        });
+    });
+
+    // Disable primary until selection
+    if (options.enablePrimary) {
+        dialog.get_primary_btn().attr('disabled', true);
+    }
+}
+
+/**
+ * Convert a human display time (e.g., "2:30 PM", "14:45") to "HH:mm:00"
+ */
+function convert_display_time_to_value(displayTime) {
+    if (!displayTime) return '';
+    try {
+        let timeStr = displayTime.trim();
+
+        if (/^\d{1,2}:\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+        if (/^\d{1,2}:\d{2}$/.test(timeStr)) return timeStr + ':00';
+
+        let period = '';
+        if (timeStr.toUpperCase().includes('AM')) {
+            period = 'AM';
+            timeStr = timeStr.replace(/AM/gi, '').trim();
+        } else if (timeStr.toUpperCase().includes('PM')) {
+            period = 'PM';
+            timeStr = timeStr.replace(/PM/gi, '').trim();
+        }
+
+        const parts = timeStr.split(':');
+        let hours = parseInt(parts[0] || '0', 10);
+        let minutes = (parts[1] || '00').padStart(2, '0');
+
+        if (period === 'PM' && hours < 12) hours += 12;
+        else if (period === 'AM' && hours === 12) hours = 0;
+
+        return `${hours.toString().padStart(2, '0')}:${minutes}:00`;
+    } catch (error) {
+        console.error('Time conversion error:', error, displayTime);
+        return displayTime;
+    }
+}
+
+/* -------------------------
+   Initial Load
+--------------------------*/
+function loadAppointments() {
+    $('#loading-message').show();
+    $('.calendar-view:visible .calendar-content').hide();
+    $('#appointments-container').hide();
+
+    updatePeriodDisplay();
+
+    var dateRange = getDateRange();
+
+    frappe.call({
+        method: 'frappe.client.get_list',
+        args: {
+            doctype: 'Patient Appointment',
+            fields: [
+                'name', 'patient', 'patient_name', 'practitioner', 'practitioner_name',
+                'appointment_date', 'appointment_time', 'department', 'status',
+                'appointment_type', 'docstatus', 'service_unit', 'company',
+                'appointment_for', 'patient_sex', 'duration', 'add_video_conferencing',
+                'invoiced', 'paid_amount', 'mode_of_payment', 'referring_practitioner',
+                'position_in_queue'
+            ],
+            filters: [
+                ['appointment_date', '>=', dateRange.start],
+                ['appointment_date', '<=', dateRange.end]
+            ],
+            order_by: 'appointment_date, appointment_time asc',
+            limit: 1000
+        },
+        callback: function(response) {
+            $('#loading-message').hide();
+
+            if (response.message && response.message.length > 0) {
+                allAppointments = response.message;
+                filteredAppointments = [];
+                applyFilters();
+            } else {
+                allAppointments = [];
+                filteredAppointments = [];
+                showNoAppointmentsMessage();
+            }
+        },
+        error: function(err) {
+            $('#loading-message').hide();
+            console.error('Error loading appointments:', err);
+            showMessage('Error loading appointments. Please try again.', 'danger');
         }
     });
 }
 
-// Helper: Render slots (reuse from your existing logic)
-function getSlotsForDialog(slot_details, appointment_date) {
-    let html = '';
-    slot_details.forEach(slot_info => {
-        html += `<div><strong>${slot_info.slot_name}</strong> - ${slot_info.service_unit || ''}</div>`;
-        html += slot_info.avail_slot.map(slot => {
-            let start_time = slot.from_time;
-            let disabled = '';
-            // Simple: don't disable past slots here for reschedule
-            return `<button class="btn btn-sm btn-secondary" 
-                    data-name="${start_time}"
-                    data-service-unit="${slot_info.service_unit || ''}"
-                    data-duration="${slot.duration || 15}"
-                    data-tele-conf="${slot_info.tele_conf || 0}"
-                    ${disabled}>
-                    ${start_time.substring(0, 5)}
-                </button>`;
-        }).join(' ');
-        html += '<br><br>';
-    });
-    return html;
-}
 // Start the initialization
 initializePage();
+
+console.log('Milkart Patient Appointment JS loaded - Enhanced with conditional drag-drop reschedule');

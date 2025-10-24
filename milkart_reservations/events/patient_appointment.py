@@ -12,6 +12,9 @@ def validate_appointment_before_save(doc, method=None):
 	STRICT VALIDATION: Validate service unit availability before saving Patient Appointment
 	Called via doc_events hook
 	"""
+	if doc.appointment_for != 'Service Unit':
+			return
+
 	try:
 		# Only validate if it has service unit and time details
 		if doc.service_unit and doc.appointment_date and doc.appointment_time:

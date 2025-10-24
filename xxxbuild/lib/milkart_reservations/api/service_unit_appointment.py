@@ -13,7 +13,7 @@ def get_service_unit_availability(service_unit, date):
         if not schedule_slots:
             return {
                 "slots": [], 
-                "message": "No schedule found for selected date"
+                "message": "No schedule found for selected date1"
             }
         
         # Get existing appointments (exclude cancelled like practitioner)

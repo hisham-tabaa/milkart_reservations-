@@ -147,7 +147,7 @@ def validate_service_unit_availability_strict(service_unit, appointment_date, ap
 		# Get schedule for the day
 		schedule_slots = get_service_unit_schedule_slots(service_unit_doc.name, appointment_date)
 		if not schedule_slots:
-			return {"available": False, "message": "No schedule found for selected date"}
+			return {"available": False, "message": "No schedule found for selected date3"}
 
 		# Check if appointment time falls within any schedule slot
 		in_schedule = False
